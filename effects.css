@@ -1,0 +1,164 @@
+/* ============================================================
+   1866 — EFFETS ADDITIONNELS
+   Animations réutilisables sur toutes les pages.
+   Se charge APRÈS le CSS inline de chaque page.
+   ============================================================ */
+
+/* ---- SPLIT TEXT (lettres) ---- */
+[data-split] .char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.7em) rotate(4deg);
+  transition: opacity 0.6s cubic-bezier(.16,1,.3,1),
+              transform 0.6s cubic-bezier(.16,1,.3,1);
+}
+[data-split].in .char {
+  opacity: 1;
+  transform: translateY(0) rotate(0);
+}
+
+/* ---- KINETIC WORDS ---- */
+[data-kinetic] { line-height: 0.95; }
+.k-word {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2a2722;
+  transition: color 0.4s, -webkit-text-stroke 0.4s;
+  display: inline-block;
+  padding: 0 6px;
+}
+.k-word.lit { color: #f6efe3; }
+.k-word.out { color: transparent; -webkit-text-stroke: 1px rgba(246,239,227,.16); }
+.k-word.out.lit { -webkit-text-stroke: 1px #9c2020; }
+
+/* ---- PAGE TRANSITION (rideau) ---- */
+#page-curtain {
+  position: fixed; inset: 0;
+  background: #0a0908;
+  z-index: 99995;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+#page-curtain.enter {
+  animation: curtainDown 0.5s cubic-bezier(.65,0,.35,1) forwards;
+}
+#page-curtain.leave {
+  transform: translateY(0);
+  animation: curtainUp 0.6s cubic-bezier(.65,0,.35,1) forwards;
+}
+@keyframes curtainDown { to { transform: translateY(0); } }
+@keyframes curtainUp { to { transform: translateY(100%); } }
+
+#page-curtain .curtain-logo {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-family: Georgia, serif;
+  font-size: clamp(48px,12vw,120px);
+  color: #f6efe3;
+  letter-spacing: -0.04em;
+  opacity: 0;
+}
+#page-curtain.leave .curtain-logo {
+  animation: curtainLogoFade 0.6s ease forwards;
+}
+@keyframes curtainLogoFade {
+  0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* ---- MARQUEE horizontale hover-pause (secondaire) ---- */
+.hmarquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.hmarquee-track {
+  display: inline-flex;
+  animation: hmarq 26s linear infinite;
+}
+.hmarquee:hover .hmarquee-track { animation-play-state: paused; }
+@keyframes hmarq {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ---- IMAGE REVEAL clip ---- */
+.img-reveal { overflow: hidden; position: relative; }
+.img-reveal img {
+  transform: scale(1.25);
+  transition: transform 1.2s cubic-bezier(.16,1,.3,1);
+}
+.img-reveal::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: #0a0908;
+  transform: translateX(0);
+  transition: transform 1s cubic-bezier(.76,0,.24,1);
+}
+.img-reveal.in img { transform: scale(1); }
+.img-reveal.in::after { transform: translateX(101%); }
+
+/* ---- HOVER LINK underline sweep ---- */
+.link-sweep { position: relative; display: inline-block; }
+.link-sweep::after {
+  content: '';
+  position: absolute; left: 0; bottom: -3px;
+  width: 100%; height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(.16,1,.3,1);
+}
+.link-sweep:hover::after { transform: scaleX(1); transform-origin: left; }
+
+/* ---- FADE STAGGER children ---- */
+[data-stagger] > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(.16,1,.3,1),
+              transform 0.7s cubic-bezier(.16,1,.3,1);
+}
+[data-stagger].in > *:nth-child(1) { transition-delay: 0.05s; }
+[data-stagger].in > *:nth-child(2) { transition-delay: 0.12s; }
+[data-stagger].in > *:nth-child(3) { transition-delay: 0.19s; }
+[data-stagger].in > *:nth-child(4) { transition-delay: 0.26s; }
+[data-stagger].in > *:nth-child(5) { transition-delay: 0.33s; }
+[data-stagger].in > *:nth-child(6) { transition-delay: 0.40s; }
+[data-stagger].in > * { opacity: 0; }
+[data-stagger].in > * { opacity: 1; transform: translateY(0); }
+
+/* ---- GRAIN overlay (film) ---- */
+#grain-overlay {
+  position: fixed; inset: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9989;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  animation: grainShift 0.6s steps(1) infinite;
+}
+@keyframes grainShift {
+  0%{transform:translate(0,0)}20%{transform:translate(-2%,2%)}
+  40%{transform:translate(2%,-1%)}60%{transform:translate(-1%,-2%)}
+  80%{transform:translate(2%,1%)}100%{transform:translate(0,0)}
+}
+
+/* ---- SECTION NUMBER floating ---- */
+.float-num {
+  position: absolute;
+  font-family: Georgia, serif;
+  font-size: clamp(120px,26vw,340px);
+  color: rgba(122,24,24,.035);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* ---- REDUCED MOTION ---- */
+@media (prefers-reduced-motion: reduce) {
+  #grain-overlay,
+  .hmarquee-track { animation: none !important; }
+  [data-split] .char,
+  .img-reveal img { opacity: 1 !important; transform: none !important; }
+  .img-reveal::after { display: none; }
+}
+
