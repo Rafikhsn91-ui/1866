@@ -776,18 +776,14 @@ input{font-family:inherit}
 (function () {
   'use strict';
 
-  /* Injecter les images dans tous les <img data-img> */
-  var imgs = document.querySelectorAll('[data-img]');
-  for (var i = 0; i < imgs.length; i++) {
-    var which = imgs[i].getAttribute('data-img');
-    imgs[i].src = (which === 'back') ? IMG1866.back : IMG1866.front;
-  }
-  Cart.setImage(IMG1866.front);
-
   var PRODUCT = { name: 'The Crime Is Within', price: 39.99 };
   var mainSize = null, modalSize = null;
+  var IMG = (typeof IMG1866 !== 'undefined') ? IMG1866 : { front: '', back: '' };
 
-  /* ---- PRELOADER ---- */
+  /* ---- PRELOADER ----
+     Ces minuteurs sont enregistrés AVANT tout code susceptible d'échouer,
+     pour garantir que l'écran de chargement disparaisse toujours (même si
+     un script tiers ou la 3D lève une erreur). */
   window.addEventListener('load', function () {
     setTimeout(startSite, 2000);
   });
@@ -796,6 +792,16 @@ input{font-family:inherit}
     if (p && !p.classList.contains('out')) startSite();
   }, 3600);
 
+  /* Injecter les images dans tous les <img data-img> */
+  try {
+    var imgs = document.querySelectorAll('[data-img]');
+    for (var i = 0; i < imgs.length; i++) {
+      var which = imgs[i].getAttribute('data-img');
+      imgs[i].src = (which === 'back') ? IMG.back : IMG.front;
+    }
+    if (typeof Cart !== 'undefined') Cart.setImage(IMG.front);
+  } catch (e) { /* ne jamais bloquer le préchargeur */ }
+
   function startSite() {
     var p = document.getElementById('pre');
     if (p && !p.classList.contains('out')) {
@@ -803,14 +809,24 @@ input{font-family:inherit}
       document.body.classList.add('hl');
       setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 850);
     }
-    // Lancer la 3D
-    Tshirt3D.init({
-      canvas: document.getElementById('three-canvas'),
-      wrap: document.getElementById('hero-3d-wrap'),
-      front: IMG1866.front,
-      back: IMG1866.back,
-      fallback: document.getElementById('three-fallback')
-    });
+    // Lancer la 3D (jamais bloquant : repli photos si indisponible)
+    try {
+      if (typeof Tshirt3D !== 'undefined') {
+        Tshirt3D.init({
+          canvas: document.getElementById('three-canvas'),
+          wrap: document.getElementById('hero-3d-wrap'),
+          front: IMG.front,
+          back: IMG.back,
+          fallback: document.getElementById('three-fallback')
+        });
+      } else {
+        var fb = document.getElementById('three-fallback');
+        if (fb) fb.style.display = '';
+      }
+    } catch (e) {
+      var fb2 = document.getElementById('three-fallback');
+      if (fb2) fb2.style.display = '';
+    }
   }
 
   /* ---- MENU ---- */
