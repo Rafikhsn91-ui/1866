@@ -83,7 +83,8 @@
     if (!bd) return;
     if (!items.length) {
       bd.innerHTML = '<div class="c-empty"><div class="c-ei">1866</div>' +
-        '<p class="c-et">Votre archive est vide.<br>Ajoutez votre premier chapitre.</p></div>';
+        '<p class="c-et">Rien ici pour l\'instant.<br>Chapter I vous attend.</p>' +
+        '<a href="#shop" class="btn-line" data-cart-shop>Découvrir Abyss Tee</a></div>';
       if (ft) ft.style.display = 'none';
       return;
     }
