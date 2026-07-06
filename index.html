@@ -272,45 +272,47 @@ section{position:relative}
 
 .hero-inner{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;text-align:center;
-  padding:20px var(--gutter) 26px;gap:14px}
+  padding:calc(var(--hdr-h) + 8px) var(--gutter) 26px;gap:clamp(8px,1.6vh,16px)}
 
 .hero-eyebrow{display:flex;align-items:center;gap:12px}
 .hero-eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--accent-deep)}
 
-/* Le fond crème est peint sur le CONTENEUR de l'image : le multiply se fond
-   ainsi contre ce crème (le blend ne voit que le stacking-context parent).
-   Aucun filter/transform/will-change sur l'image, sinon la couche s'isole. */
-.hero-stage{position:relative;width:100%;max-width:640px;margin:2px auto 4px;background:var(--bg)}
-.hero-stage img{width:100%;height:auto;mix-blend-mode:multiply}
-/* micro specs autour (desktop) */
-.hero-spec{display:none}
+.hero-head{font-family:var(--serif);color:var(--ink);line-height:.9;letter-spacing:-.03em;text-align:center}
+.hero-head .l1{display:block;font-style:italic;font-weight:400;font-size:clamp(38px,10.5vw,100px)}
+.hero-head .l2{display:block;font-weight:400;font-size:clamp(38px,10.5vw,100px);letter-spacing:-.05em;margin-top:-.04em}
 
-.hero-title{
-  font-family:var(--serif);font-size:clamp(15px,4.6vw,20px);
-  letter-spacing:.02em;color:var(--ink);
-}
-.hero-price{font-size:13px;letter-spacing:.16em;color:var(--ink-2)}
-.hero-tagline{font-family:var(--serif);font-style:italic;font-size:clamp(18px,5vw,26px);color:var(--ink);letter-spacing:-.01em}
+/* ---- RÉVÉLATION SPOTLIGHT (face → dos) ----
+   Le fond crème est peint sur CHAQUE couche : le multiply se fond dans le crème.
+   La couche « dos » est révélée par un masque radial doux qui suit le curseur. */
+.reveal-stage{position:relative;width:100%;max-width:min(54vh,500px);aspect-ratio:9/10;
+  margin:clamp(6px,1.5vh,16px) auto;background:var(--bg);--r:230px;touch-action:pan-y}
+.reveal-stage .rv-base{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.reveal-stage .rv-top{position:absolute;inset:0;background:var(--bg);--sx:-999px;--sy:-999px;
+  -webkit-mask-image:radial-gradient(circle var(--r) at var(--sx) var(--sy),#000 0%,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%);
+  mask-image:radial-gradient(circle var(--r) at var(--sx) var(--sy),#000 0%,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.reveal-stage .rv-top img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.rv-hint{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);white-space:nowrap;
+  font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3)}
+@media (max-width:600px){.reveal-stage{--r:145px;max-width:80vw}}
 
-.hero-specs-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;margin-top:2px}
-.hero-specs-row span{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
+.hero-aside{font-size:13px;line-height:1.65;color:var(--ink-2);max-width:280px}
+.hero-para-l{display:none}
+.hero-foot{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:clamp(20px,3.5vh,34px)}
+.hero-foot .meta{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
 
 .scroll-cue{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:50%;
-  transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:7px}
+  transform:translateX(-50%);z-index:2;display:none;flex-direction:column;align-items:center;gap:7px}
 .scroll-cue .lbl{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-3)}
 .scroll-cue .bar{width:1px;height:34px;background:var(--line-2);position:relative;overflow:hidden}
 .scroll-cue .bar::after{content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;
   background:var(--ink);animation:cue 2.2s var(--e-inout) infinite}
 @keyframes cue{0%{transform:translateY(0)}60%,100%{transform:translateY(220%)}}
 
-@media (min-width:900px){
-  .hero-inner{padding-bottom:60px}
-  .hero-stage{max-width:min(52vh,560px)}
-  .hero-spec{display:block;position:absolute;z-index:3;font-size:11px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--ink-2);line-height:1.7}
-  .hero-spec .k{color:var(--ink-3);display:block;font-size:9.5px;letter-spacing:.28em;margin-bottom:2px}
-  .spec-l{top:32%;left:calc(var(--gutter) + 6px);text-align:left}
-  .spec-r{top:38%;right:calc(var(--gutter) + 6px);text-align:right}
+@media (min-width:760px){
+  .scroll-cue{display:flex}
+  .hero-para-l{display:block;position:absolute;bottom:56px;left:var(--gutter);z-index:3;text-align:left;max-width:250px}
+  .hero-foot{position:absolute;bottom:40px;right:var(--gutter);left:auto;z-index:3;align-items:flex-end;text-align:right;margin-top:0;max-width:290px}
 }
 
 /* ---- BOUTONS ---- */
@@ -694,21 +696,26 @@ section{position:relative}
   </div>
 
   <div class="hero-inner">
-    <div class="hero-eyebrow" data-reveal><span class="dot"></span><span class="eyebrow">Chapter I — Première pièce</span></div>
+    <div class="hero-eyebrow" data-reveal><span class="dot"></span><span class="eyebrow">Maison 1866 — Chapter I</span></div>
 
-    <div class="spec-l hero-spec" aria-hidden="true"><span class="k">Matière</span>Heavyweight Cotton<br><span class="k" style="margin-top:12px">Grammage</span>240 GSM</div>
-    <div class="spec-r hero-spec" aria-hidden="true"><span class="k">Couleur</span>Washed Black<br><span class="k" style="margin-top:12px">Coupe</span>Oversized</div>
+    <h1 class="hero-head" data-reveal>
+      <span class="l1">The crime is</span>
+      <span class="l2">within.</span>
+    </h1>
 
-    <div class="hero-stage" data-reveal="fade">
-      <img data-img="front" alt="Abyss Tee — tee-shirt noir washed black, vue de face" width="900" height="720" data-cursor="Voir">
+    <!-- Révélation spotlight : la lumière suit le curseur/doigt et dévoile le dos -->
+    <div class="reveal-stage" id="reveal-stage" data-cursor="Révéler"
+         role="img" aria-label="Abyss Tee — déplacez le curseur ou le doigt sur le tee pour révéler le dos, l'impression crème « The Crime Is Within »">
+      <img class="rv-base" data-img="front" alt="Abyss Tee — tee-shirt noir washed black, vue de face">
+      <div class="rv-top" aria-hidden="true"><img data-img="back" alt=""></div>
+      <span class="rv-hint" aria-hidden="true">Déplacez pour révéler le dos</span>
     </div>
 
-    <h1 class="hero-title" data-reveal>Abyss Tee</h1>
-    <div class="hero-tagline serif" data-reveal>Made for silence.</div>
-    <div class="hero-specs-row" data-reveal>
-      <span>240 GSM</span><span>Washed Black</span><span>Oversized</span><span>59 €</span>
-    </div>
-    <div style="margin-top:14px" data-reveal>
+    <p class="hero-aside hero-para-l" data-reveal>Chaque pièce garde son récit. Passez la lumière sur le tee pour en dévoiler le dos — l'impression crème, presque sculpturale.</p>
+
+    <div class="hero-foot" data-reveal>
+      <p class="hero-aside">Coton lourd 240 GSM, coupe oversize. Le dos se révèle sous la lumière.</p>
+      <div class="meta">Abyss Tee — 59 €</div>
       <a href="#shop" class="btn" data-magnetic><span class="t">Explorer la pièce</span><span class="ar">→</span></a>
     </div>
   </div>
@@ -1086,6 +1093,41 @@ section{position:relative}
   } else {
     $$('[data-reveal]').forEach(function (el) { el.classList.add('in'); });
   }
+
+  /* ---------------------------------------------------------
+     4b. HERO — RÉVÉLATION SPOTLIGHT (face → dos)
+     Masque radial doux qui suit le curseur/doigt, avec lissage (lerp).
+     Sur mobile / inactivité : légère dérive automatique pour rendre
+     l'effet découvrable sans souris. prefers-reduced-motion : suivi direct,
+     pas de dérive.
+     --------------------------------------------------------- */
+  (function () {
+    var stage = $('#reveal-stage');
+    if (!stage) return;
+    var top = $('.rv-top', stage);
+    if (!top) return;
+    var raw = { x: 0, y: 0 }, sm = { x: 0, y: 0 }, last = -9999;
+    function rect() { return stage.getBoundingClientRect(); }
+    var r0 = rect(); sm.x = r0.width / 2; sm.y = r0.height / 2; raw.x = sm.x; raw.y = sm.y;
+    function track(clientX, clientY) { var b = rect(); raw.x = clientX - b.left; raw.y = clientY - b.top; last = performance.now(); }
+    window.addEventListener('pointermove', function (e) { track(e.clientX, e.clientY); }, { passive: true });
+    stage.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (t) track(t.clientX, t.clientY); }, { passive: true });
+    var t0 = performance.now();
+    (function loop(now) {
+      now = now || performance.now();
+      if (!RM && (now - last > 1500)) {
+        // dérive douce (Lissajous) dans les limites du stage
+        var b = rect(), t = (now - t0) / 1000;
+        raw.x = b.width * (0.5 + 0.30 * Math.sin(t * 0.55));
+        raw.y = b.height * (0.5 + 0.28 * Math.sin(t * 0.83 + 1.1));
+      }
+      var f = RM ? 1 : 0.12;
+      sm.x += (raw.x - sm.x) * f; sm.y += (raw.y - sm.y) * f;
+      top.style.setProperty('--sx', sm.x.toFixed(1) + 'px');
+      top.style.setProperty('--sy', sm.y.toFixed(1) + 'px');
+      requestAnimationFrame(loop);
+    })();
+  })();
 
   /* Story : révélation ligne par ligne */
   var story = $('[data-story]');
