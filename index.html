@@ -27,6 +27,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F5F0E8">
 <meta name="color-scheme" content="light">
+<link rel="preload" as="image" href="img/abyss-front.webp" fetchpriority="high">
+<meta property="og:image" content="img/abyss-front.webp">
+<meta name="twitter:image" content="img/abyss-front.webp">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='32' y='42' font-family='Georgia,serif' font-size='21' letter-spacing='-1' fill='%23151515' text-anchor='middle'>1866</text></svg>">
 
 <!-- Les animations d'apparition ne sont armées que si JS tourne :
@@ -68,10 +71,10 @@
   --deep:#Dfd2bd;        /* moment sombre / chaud */
   --deep-2:#D2C3A9;
   --ink:#151515;         /* texte principal */
-  --ink-2:#6E665E;       /* texte secondaire */
-  --ink-3:#9A9186;       /* texte tertiaire / labels */
-  --accent:#A6845E;      /* accent chaud */
-  --accent-deep:#8A6A45;
+  --ink-2:#5C564F;       /* texte secondaire — AA sur crème et surface */
+  --ink-3:#6D675F;       /* texte tertiaire / labels — AA (4.9:1) */
+  --accent:#A6845E;      /* accent chaud — décoratif uniquement (dégradé) */
+  --accent-deep:#806240;  /* accent texte — AA (4.95:1) */
   --line:rgba(21,21,21,.12);
   --line-2:rgba(21,21,21,.22);
   --blood:#7a1818;
@@ -122,6 +125,11 @@ ul{list-style:none}
   font-family:var(--serif);font-weight:400;line-height:.92;
   letter-spacing:-.02em;color:var(--ink);
 }
+
+/* ---- LIEN D'ÉVITEMENT ---- */
+.skip{position:absolute;left:-9999px;top:0;z-index:3000;background:var(--ink);color:var(--bg);
+  padding:14px 22px;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.skip:focus{left:12px;top:12px}
 
 /* ---- GRAIN TEXTURE ---- */
 #grain{
@@ -467,7 +475,9 @@ section{position:relative}
 /* ============================================================
    MOMENT DOS — THE CRIME IS WITHIN
    ============================================================ */
+/* Fond plus profond : on redescend les tokens de texte pour rester AA. */
 #within{
+  --ink-2:#544E47;--ink-3:#544E47;--accent-deep:#654E32;
   background:var(--deep-2);
   padding:clamp(80px,13vw,170px) 0;overflow:hidden;position:relative;
 }
@@ -502,6 +512,17 @@ section{position:relative}
 .story-text .ln{display:block;overflow:hidden}
 .story-text .ln > span{display:block}
 .story-sub{margin-top:34px;max-width:46ch;color:var(--ink-2);font-size:15px;line-height:1.8}
+
+/* Bloc origine — note éditoriale */
+.origin{display:grid;grid-template-columns:1fr;gap:14px;margin-top:clamp(34px,5vw,56px);
+  padding-top:clamp(26px,4vw,38px);border-top:1px solid var(--line)}
+.origin-label{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent-deep)}
+.origin-body{max-width:62ch}
+.origin-body p{color:var(--ink-2);font-size:15px;line-height:1.8}
+.origin-body p + p{margin-top:14px}
+.origin-body strong{color:var(--ink);font-weight:400}
+.origin-body em{font-family:var(--serif);font-style:italic;color:var(--ink)}
+@media (min-width:820px){.origin{grid-template-columns:200px 1fr;gap:40px}}
 
 /* Promesses / piliers */
 .pillars{display:grid;grid-template-columns:1fr;gap:1px;margin-top:clamp(44px,7vw,80px);
@@ -722,6 +743,8 @@ section{position:relative}
 
 <body>
 
+<a href="#top" class="skip">Aller au contenu</a>
+
 <div id="grain" aria-hidden="true"></div>
 <div id="progress" aria-hidden="true"></div>
 <div id="cur" aria-hidden="true"></div>
@@ -790,8 +813,8 @@ section{position:relative}
     <!-- Révélation spotlight : la lumière suit le curseur/doigt et dévoile le dos -->
     <div class="reveal-stage" id="reveal-stage" data-cursor="Révéler"
          role="img" aria-label="Abyss Tee — déplacez le curseur ou le doigt sur le tee pour révéler le dos, l'impression crème « The Crime Is Within »">
-      <img class="rv-base" data-img="front" alt="Abyss Tee — tee-shirt noir washed black, vue de face">
-      <div class="rv-top" aria-hidden="true"><img data-img="back" alt=""></div>
+      <img class="rv-base" data-img="front" src="img/abyss-front.webp" width="900" height="720" fetchpriority="high" decoding="async" alt="Abyss Tee — tee-shirt noir washed black, vue de face">
+      <div class="rv-top" aria-hidden="true"><img data-img="back" src="img/abyss-back.webp" width="900" height="721" decoding="async" alt=""></div>
       <span class="rv-hint" aria-hidden="true">Déplacez pour révéler le dos</span>
     </div>
 
@@ -835,13 +858,13 @@ section{position:relative}
       <div class="gallery">
         <div class="gal-stage" id="gal-stage" role="group" aria-label="Galerie produit — face et dos">
           <span class="gal-tag" id="gal-tag">Face</span>
-          <img data-img="front" class="active" id="gal-front" alt="Abyss Tee — vue de face, patch cœur brisé 1866">
-          <img data-img="back" id="gal-back" alt="Abyss Tee — vue de dos, impression crème The Crime Is Within">
+          <img data-img="front" class="active" id="gal-front" src="img/abyss-front.webp" width="900" height="720" loading="lazy" decoding="async" alt="Abyss Tee — vue de face, patch cœur brisé 1866">
+          <img data-img="back" id="gal-back" src="img/abyss-back.webp" width="900" height="721" loading="lazy" decoding="async" alt="Abyss Tee — vue de dos, impression crème The Crime Is Within">
         </div>
         <div class="gal-switch" role="tablist" aria-label="Basculer face / dos">
           <div class="gal-ind" id="gal-ind" aria-hidden="true"></div>
-          <button role="tab" aria-selected="true" class="on" id="tab-front" data-face="front"><span class="num">01</span> Face</button>
-          <button role="tab" aria-selected="false" id="tab-back" data-face="back"><span class="num">02</span> Dos</button>
+          <button role="tab" aria-selected="true" aria-controls="gal-front" class="on" id="tab-front" data-face="front"><span class="num">01</span> Face</button>
+          <button role="tab" aria-selected="false" aria-controls="gal-back" id="tab-back" data-face="back"><span class="num">02</span> Dos</button>
         </div>
         <p class="gal-hint" aria-hidden="true">Glissez ou touchez pour changer de vue</p>
       </div>
@@ -903,7 +926,7 @@ section{position:relative}
         <p class="within-p" data-reveal>Une impression crème, épaisse, presque sculpturale. Le dos devient un manifeste silencieux — porté sur le coton washed black du 240 GSM.</p>
       </div>
       <div class="within-img wipe" style="--wipe:var(--deep-2)" data-reveal="fade">
-        <img data-img="back" alt="Abyss Tee — dos, impression crème The Crime Is Within">
+        <img data-img="back" src="img/abyss-back.webp" width="900" height="721" loading="lazy" decoding="async" alt="Abyss Tee — dos, impression crème The Crime Is Within">
       </div>
     </div>
   </div>
@@ -934,6 +957,14 @@ section{position:relative}
       <span class="ln"><span>marquer les esprits.</span></span>
     </p>
     <p class="story-sub" data-reveal>Maison 1866 dessine des pièces pensées pour durer — matières choisies, design intemporel, rien de superflu. Less noise. More weight.</p>
+
+    <div class="origin" data-reveal>
+      <div class="origin-label">L'origine</div>
+      <div class="origin-body">
+        <p>En <strong>1866</strong>, Dostoïevski publie <em>Crime et Châtiment</em>. Deux ans plus tôt, <em>Les Carnets du Sous-Sol</em>. Deux textes qui descendent là où personne ne veut regarder : la culpabilité, le doute, la faute qu'on porte seul.</p>
+        <p>Cette date n'est pas un logo. C'est une intention — et c'est d'elle que vient la phrase imprimée au dos.</p>
+      </div>
+    </div>
 
     <div class="pillars">
       <div class="pillar spot" data-reveal><div class="n">240 GSM</div><h3>Coton dense</h3><p>Un grammage lourd qui tient dans le temps et se patine avec l'usage.</p></div>
@@ -1121,6 +1152,7 @@ section{position:relative}
   // Injection des images réelles
   try {
     $$('[data-img]').forEach(function (el) {
+      if (el.getAttribute('src')) return; // déjà servi par le HTML (préchargé)
       el.src = (el.getAttribute('data-img') === 'back') ? IMG.back : IMG.front;
     });
     if (typeof Cart !== 'undefined') {
@@ -1228,6 +1260,28 @@ section{position:relative}
   })();
 
   /* ---------------------------------------------------------
+     4a. ACCESSIBILITÉ — piège de focus réutilisable
+     Maintient le focus clavier dans un panneau ouvert (panier, menu)
+     et le rend au déclencheur à la fermeture.
+     --------------------------------------------------------- */
+  var FOCUSABLE = 'a[href],button:not([disabled]),input,textarea,select,[tabindex]:not([tabindex="-1"])';
+  function trapFocus(panel) {
+    function onKey(e) {
+      if (e.key !== 'Tab') return;
+      var f = $$(FOCUSABLE, panel).filter(function (el) { return el.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    panel.addEventListener('keydown', onKey);
+    return function () { panel.removeEventListener('keydown', onKey); };
+  }
+  var lastTrigger = null;
+  function rememberTrigger(el) { lastTrigger = el || document.activeElement; }
+  function restoreTrigger() { if (lastTrigger && lastTrigger.focus) lastTrigger.focus(); lastTrigger = null; }
+
+  /* ---------------------------------------------------------
      4b. HERO — RÉVÉLATION SPOTLIGHT (face → dos)
      Masque radial doux qui suit le curseur/doigt, avec lissage (lerp).
      Sur mobile / inactivité : légère dérive automatique pour rendre
@@ -1314,16 +1368,22 @@ section{position:relative}
      6. MENU MOBILE
      --------------------------------------------------------- */
   var menu = $('#menu'), menuBtn = $('#menu-btn'), menuClose = $('#menu-close');
+  var untrapMenu = null;
   function openMenu() {
+    rememberTrigger(menuBtn);
     menu.classList.add('open'); menu.setAttribute('aria-hidden', 'false');
     menuBtn.setAttribute('aria-expanded', 'true'); menuBtn.classList.add('open');
     document.body.classList.add('locked');
+    untrapMenu = trapFocus(menu);
     var first = $('.m-nav a', menu); if (first) setTimeout(function () { first.focus(); }, 300);
   }
   function closeMenu() {
+    if (!menu.classList.contains('open')) return;
     menu.classList.remove('open'); menu.setAttribute('aria-hidden', 'true');
     menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.classList.remove('open');
     if (!$('#cart').classList.contains('open')) document.body.classList.remove('locked');
+    if (untrapMenu) { untrapMenu(); untrapMenu = null; }
+    restoreTrigger();
   }
   if (menuBtn) menuBtn.addEventListener('click', openMenu);
   if (menuClose) menuClose.addEventListener('click', closeMenu);
@@ -1348,6 +1408,17 @@ section{position:relative}
   }
   if (tabFront) tabFront.addEventListener('click', function () { setFace('front'); });
   if (tabBack) tabBack.addEventListener('click', function () { setFace('back'); });
+  // Flèches ← → entre les onglets (motif ARIA tabs)
+  [tabFront, tabBack].forEach(function (t) {
+    if (!t) return;
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      var next = (e.key === 'ArrowRight') ? tabBack : tabFront;
+      setFace(next === tabBack ? 'back' : 'front');
+      next.focus();
+    });
+  });
   // Swipe mobile
   if (galStage) {
     var sx = 0, sy = 0, tracking = false;
@@ -1398,9 +1469,23 @@ section{position:relative}
      9. PANIER — ouverture/fermeture + accessibilité
      --------------------------------------------------------- */
   var cart = $('#cart'), cov = $('#cov');
-  var _open = Cart.open, _close = Cart.close;
-  Cart.open = function () { _open.call(Cart); cart.setAttribute('aria-hidden', 'false'); cov.setAttribute('aria-hidden', 'false'); document.body.classList.add('locked'); };
-  Cart.close = function () { _close.call(Cart); cart.setAttribute('aria-hidden', 'true'); cov.setAttribute('aria-hidden', 'true'); if (!menu.classList.contains('open')) document.body.classList.remove('locked'); };
+  var _open = Cart.open, _close = Cart.close, untrapCart = null;
+  Cart.open = function () {
+    if (!cart.classList.contains('open')) rememberTrigger($('#cart-btn'));
+    _open.call(Cart);
+    cart.setAttribute('aria-hidden', 'false'); cov.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('locked');
+    if (!untrapCart) untrapCart = trapFocus(cart);
+    var cc = $('#cart-close'); if (cc) setTimeout(function () { cc.focus(); }, 320);
+  };
+  Cart.close = function () {
+    var wasOpen = cart.classList.contains('open');
+    _close.call(Cart);
+    cart.setAttribute('aria-hidden', 'true'); cov.setAttribute('aria-hidden', 'true');
+    if (!menu.classList.contains('open')) document.body.classList.remove('locked');
+    if (untrapCart) { untrapCart(); untrapCart = null; }
+    if (wasOpen) restoreTrigger();
+  };
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { if (menu.classList.contains('open')) closeMenu(); }
   });

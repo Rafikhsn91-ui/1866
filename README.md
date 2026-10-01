@@ -12,12 +12,16 @@ Stack : **HTML / CSS / JavaScript vanilla**. Aucune étape de build, aucun
 ```
 /
 ├── index.html          ← l'expérience complète (hero, produit, story, FAQ, contact)
+├── 404.html            ← page d'erreur (servie automatiquement par GitHub Pages)
 ├── lookbook.html       ← galerie visuelle
 ├── story.html          ← histoire de la marque
+├── img/
+│   ├── abyss-front.webp
+│   └── abyss-back.webp ← photos produit (vrais fichiers, préchargeables)
 ├── css/
 │   └── effects.css     ← effets partagés (pages secondaires)
 ├── js/
-│   ├── images.js       ← photos produit (base64) — chargé en 1er
+│   ├── images.js       ← chemins des photos — chargé en 1er
 │   ├── cart.js         ← panier partagé (localStorage) — source de vérité unique
 │   ├── animations.js   ← moteur d'animations (pages secondaires)
 │   └── tshirt3d.js     ← moteur 3D (pages secondaires)
@@ -71,6 +75,15 @@ Mesures en place :
   reste défilable ; l'écran d'intro se retire tout seul (filet CSS).
 - `referrer` en `strict-origin-when-cross-origin`.
 
+## Accessibilité
+
+- Contrastes **conformes WCAG AA** (≥ 4.5:1) sur tous les fonds, y compris la
+  section sombre `#within` qui redéfinit ses propres tokens de texte.
+- Piège de focus dans le panier et le menu, focus rendu au déclencheur
+  à la fermeture, fermeture au clavier par `Échap`.
+- Onglets Face/Dos navigables aux flèches ← →, lien d'évitement en début de page.
+- `prefers-reduced-motion` respecté partout.
+
 ### Limite connue
 
 `frame-ancestors` (anti-clickjacking) et `X-Content-Type-Options` **ne sont pas
@@ -103,11 +116,16 @@ les données structurées JSON-LD en haut de `index.html`.
 
 ## Changer les images
 
-Les photos sont encodées dans `js/images.js` (clés `front` et `back`).
-Pour les remplacer, convertir les nouvelles images en base64 (par ex. sur
-base64-image.de) et remplacer les valeurs. Les photos sur **fond blanc** sont
-recommandées : le site les fond dans le fond crème via
-`mix-blend-mode: multiply`, ce qui fait disparaître le rectangle de l'image.
+Remplacer les fichiers dans `img/` (`abyss-front.webp`, `abyss-back.webp`).
+Les chemins sont centralisés dans `js/images.js` ; `index.html` les écrit aussi
+en dur dans les `<img src>` pour que le navigateur les précharge sans attendre
+le JavaScript.
+
+Penser à mettre à jour les attributs `width`/`height` des `<img>` si les
+dimensions changent — ils évitent tout décalage de mise en page (CLS = 0).
+
+Les photos sur **fond blanc** sont recommandées : le site les fond dans le fond
+crème via `mix-blend-mode: multiply`, ce qui fait disparaître le rectangle.
 
 > Note technique : pour que ce fondu fonctionne, le conteneur de l'image doit
 > porter la couleur de fond, et l'image ne doit avoir ni `filter`, ni
