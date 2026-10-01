@@ -1,22 +1,101 @@
 /* ============================================================
-   1866 — MOTEUR PANIER
-   Partagé entre toutes les pages via localStorage.
-   Le panier persiste quand on navigue index -> lookbook -> story.
+   1866 — MOTEUR PANIER (durci)
+   Source de vérité unique, partagée entre les pages via localStorage.
+
+   SÉCURITÉ
+   - Aucun HTML n'est construit à partir des données stockées :
+     tout est rendu via l'API DOM (textContent), jamais innerHTML.
+   - Plus d'`onclick` inline : écouteurs délégués + data-attributs.
+   - Ce qui sort du localStorage est considéré comme NON FIABLE
+     (corrompu ou falsifié) et re-validé : types, longueurs, bornes.
+   - Le prix affiché vient du catalogue défini dans le code, jamais
+     d'une valeur stockée côté client.
    ============================================================ */
 (function (global) {
   'use strict';
 
   var Cart = {};
-  var KEY = 'cart1866';
+
+  var KEY = 'm1866.cart.v1';   // clé versionnée
+  var LEGACY_KEY = 'cart1866'; // ancienne clé, migrée puis supprimée
+  var MAX_QTY = 10;
+  var MAX_LINES = 20;
+  var MAX_PRICE = 100000;
+
   var items = [];
+  var FRONT_IMG = '';
+  var catalog = null; // { nom: prix }
 
-  var FRONT_IMG = ''; // défini par la page via Cart.setImage()
+  /* ---------- validation ---------- */
+  function text(v, max) {
+    return (typeof v === 'string') ? v.slice(0, max) : '';
+  }
+  function qtyOf(v) {
+    var n = Math.floor(Number(v));
+    if (!isFinite(n) || n < 1) return 1;
+    return n > MAX_QTY ? MAX_QTY : n;
+  }
+  function priceOf(name, stored) {
+    if (catalog && Object.prototype.hasOwnProperty.call(catalog, name)) return catalog[name];
+    var n = Number(stored);
+    return (isFinite(n) && n >= 0 && n <= MAX_PRICE) ? n : 0;
+  }
+  function sanitize(raw) {
+    if (!Array.isArray(raw)) return [];
+    var out = [];
+    for (var i = 0; i < raw.length && out.length < MAX_LINES; i++) {
+      var it = raw[i];
+      if (!it || typeof it !== 'object') continue;
+      var name = text(it.name, 80);
+      if (!name) continue;
+      out.push({
+        name: name,
+        size: text(it.size, 8),
+        price: priceOf(name, it.price),
+        qty: qtyOf(it.qty)
+      });
+    }
+    return out;
+  }
 
-  try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { items = []; }
+  function load() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(KEY);
+      if (raw === null) {
+        var old = localStorage.getItem(LEGACY_KEY);
+        if (old !== null) { raw = old; localStorage.removeItem(LEGACY_KEY); }
+      }
+    } catch (e) { raw = null; }
+    var parsed = [];
+    try { parsed = JSON.parse(raw || '[]'); } catch (e) { parsed = []; }
+    items = sanitize(parsed);
+  }
+  function save() {
+    // Si le stockage échoue (mode privé, quota), le panier continue en mémoire.
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {}
+  }
+  load();
 
-  Cart.setImage = function (dataUrl) { FRONT_IMG = dataUrl; };
+  /* ---------- API publique ---------- */
 
-  Cart.get = function () { return items; };
+  // Le prix vient TOUJOURS du code, jamais du stockage client.
+  Cart.setCatalog = function (list) {
+    if (!list || !list.length) return;
+    catalog = {};
+    for (var i = 0; i < list.length; i++) catalog[list[i].name] = Number(list[i].price) || 0;
+    for (var j = 0; j < items.length; j++) items[j].price = priceOf(items[j].name, items[j].price);
+    save();
+  };
+
+  // N'accepte qu'une image inline (data:image/) ou un chemin relatif simple.
+  // Bloque notamment javascript: et les URL externes.
+  Cart.setImage = function (url) {
+    if (typeof url !== 'string') return;
+    if (/^data:image\//i.test(url) || /^[\w./-]+$/.test(url)) FRONT_IMG = url;
+  };
+
+  Cart.get = function () { return items.slice(); };
 
   Cart.count = function () {
     var n = 0;
@@ -31,92 +110,144 @@
   };
 
   Cart.add = function (product, size) {
-    var ex = null;
+    if (!product || typeof product.name !== 'string') return;
+    var name = text(product.name, 80);
+    var sz = text(size, 8);
     for (var i = 0; i < items.length; i++) {
-      if (items[i].name === product.name && items[i].size === size) ex = items[i];
+      if (items[i].name === name && items[i].size === sz) {
+        items[i].qty = qtyOf(items[i].qty + 1);
+        save(); Cart.updateBadge(true);
+        return;
+      }
     }
-    if (ex) ex.qty++;
-    else items.push({ name: product.name, price: product.price, size: size, qty: 1 });
+    if (items.length >= MAX_LINES) return;
+    items.push({ name: name, size: sz, price: priceOf(name, product.price), qty: 1 });
     save();
     Cart.updateBadge(true);
   };
 
-  Cart.changeQty = function (name, size, delta) {
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].name === name && items[i].size === size) {
-        items[i].qty += delta;
-        if (items[i].qty <= 0) items.splice(i, 1);
-        break;
-      }
-    }
+  function setQty(i, n) {
+    if (i < 0 || i >= items.length) return;
+    if (n <= 0) items.splice(i, 1);
+    else items[i].qty = qtyOf(n);
     save();
     Cart.updateBadge(false);
     Cart.render();
-  };
-
-  Cart.remove = function (name, size) {
-    items = items.filter(function (i) {
-      return !(i.name === name && i.size === size);
-    });
-    save();
-    Cart.updateBadge(false);
-    Cart.render();
-  };
-
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {}
   }
+  function indexOf(name, size) {
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].name === name && items[i].size === size) return i;
+    }
+    return -1;
+  }
+
+  Cart.changeQty = function (name, size, delta) {
+    var i = indexOf(name, size);
+    if (i >= 0) setQty(i, items[i].qty + Number(delta || 0));
+  };
+  Cart.remove = function (name, size) {
+    var i = indexOf(name, size);
+    if (i >= 0) { items.splice(i, 1); save(); Cart.updateBadge(false); Cart.render(); }
+  };
 
   Cart.updateBadge = function (pop) {
     var b = document.getElementById('badge');
     if (!b) return;
-    b.textContent = Cart.count();
+    b.textContent = String(Cart.count());
     if (pop) {
       b.classList.add('pop');
       setTimeout(function () { b.classList.remove('pop'); }, 400);
     }
   };
 
+  /* ---------- rendu (API DOM uniquement) ---------- */
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+  function money(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+  function qbtn(label, action, idx, aria) {
+    var b = el('button', 'c-qb', label);
+    b.type = 'button';
+    b.setAttribute('aria-label', aria);
+    b.setAttribute('data-cart-action', action);
+    b.setAttribute('data-cart-index', String(idx));
+    return b;
+  }
+
   Cart.render = function () {
     var bd = document.getElementById('c-bd');
     var ft = document.getElementById('c-ft');
     if (!bd) return;
+    bd.textContent = '';
+
     if (!items.length) {
-      bd.innerHTML = '<div class="c-empty"><div class="c-ei">1866</div>' +
-        '<p class="c-et">Rien ici pour l\'instant.<br>Chapter I vous attend.</p>' +
-        '<a href="#shop" class="btn-line" data-cart-shop>Découvrir Abyss Tee</a></div>';
+      var em = el('div', 'c-empty');
+      em.appendChild(el('div', 'c-ei', '1866'));
+      var p = el('p', 'c-et');
+      p.appendChild(document.createTextNode("Rien ici pour l'instant."));
+      p.appendChild(document.createElement('br'));
+      p.appendChild(document.createTextNode('Chapter I vous attend.'));
+      em.appendChild(p);
+      var a = el('a', 'btn-line', 'Découvrir Abyss Tee');
+      a.href = '#shop';
+      a.setAttribute('data-cart-shop', '');
+      em.appendChild(a);
+      bd.appendChild(em);
       if (ft) ft.style.display = 'none';
       return;
     }
-    var html = '';
+
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
-      html += '<div class="c-it">' +
-        '<div class="c-th"><img src="' + FRONT_IMG + '" alt="' + it.name + '"></div>' +
-        '<div><div class="c-in">' + it.name + '</div>' +
-        '<div class="c-is">Taille ' + it.size + '</div>' +
-        '<div class="c-qty">' +
-        '<button class="c-qb" onclick="Cart.changeQty(\'' + it.name + '\',\'' + it.size + '\',-1)" aria-label="Réduire">−</button>' +
-        '<span class="c-qn">' + it.qty + '</span>' +
-        '<button class="c-qb" onclick="Cart.changeQty(\'' + it.name + '\',\'' + it.size + '\',1)" aria-label="Augmenter">+</button>' +
-        '</div></div>' +
-        '<div><div class="c-ip">' + (it.price * it.qty).toFixed(2).replace('.', ',') + ' €</div>' +
-        '<button class="c-rm" onclick="Cart.remove(\'' + it.name + '\',\'' + it.size + '\')">Retirer</button>' +
-        '</div></div>';
+      var row = el('div', 'c-it');
+
+      var th = el('div', 'c-th');
+      if (FRONT_IMG) {
+        var im = document.createElement('img');
+        im.src = FRONT_IMG;
+        im.alt = it.name;
+        th.appendChild(im);
+      }
+      row.appendChild(th);
+
+      var mid = el('div');
+      mid.appendChild(el('div', 'c-in', it.name));
+      if (it.size) mid.appendChild(el('div', 'c-is', 'Taille ' + it.size));
+      var q = el('div', 'c-qty');
+      q.appendChild(qbtn('−', 'dec', i, 'Réduire la quantité'));
+      q.appendChild(el('span', 'c-qn', String(it.qty)));
+      q.appendChild(qbtn('+', 'inc', i, 'Augmenter la quantité'));
+      mid.appendChild(q);
+      row.appendChild(mid);
+
+      var right = el('div');
+      right.appendChild(el('div', 'c-ip', money(it.price * it.qty)));
+      var rm = el('button', 'c-rm', 'Retirer');
+      rm.type = 'button';
+      rm.setAttribute('data-cart-action', 'remove');
+      rm.setAttribute('data-cart-index', String(i));
+      right.appendChild(rm);
+      row.appendChild(right);
+
+      bd.appendChild(row);
     }
-    bd.innerHTML = html;
+
     var tp = document.getElementById('c-total');
-    if (tp) tp.textContent = Cart.total().toFixed(2).replace('.', ',') + ' €';
+    if (tp) tp.textContent = money(Cart.total());
     if (ft) ft.style.display = 'block';
   };
 
+  /* ---------- ouverture / fermeture ---------- */
   Cart.open = function () {
     Cart.render();
     var c = document.getElementById('cart');
     var o = document.getElementById('cov');
     if (c) c.classList.add('open');
     if (o) o.classList.add('show');
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('locked');
   };
 
   Cart.close = function () {
@@ -124,35 +255,7 @@
     var o = document.getElementById('cov');
     if (c) c.classList.remove('open');
     if (o) o.classList.remove('show');
-    document.body.style.overflow = '';
-  };
-
-  /* Animation fly-to-cart */
-  Cart.fly = function (triggerEl) {
-    var badge = document.getElementById('badge');
-    if (!badge || !triggerEl || !FRONT_IMG) return;
-    var b = badge.getBoundingClientRect();
-    var t = triggerEl.getBoundingClientRect();
-    var img = document.createElement('img');
-    img.src = FRONT_IMG;
-    img.className = 'fly';
-    var sx = t.left + t.width / 2 - 29;
-    var sy = t.top + t.height / 2 - 36;
-    img.style.left = sx + 'px';
-    img.style.top = sy + 'px';
-    document.body.appendChild(img);
-    var ex = b.left + b.width / 2 - 29;
-    var ey = b.top + b.height / 2 - 36;
-    if (img.animate) {
-      var anim = img.animate([
-        { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
-        { transform: 'translate(' + ((ex - sx) * 0.5) + 'px,' + ((ey - sy) - 70) + 'px) scale(0.7) rotate(-8deg)', opacity: 1, offset: 0.55 },
-        { transform: 'translate(' + (ex - sx) + 'px,' + (ey - sy) + 'px) scale(0.06) rotate(4deg)', opacity: 0 }
-      ], { duration: 680, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' });
-      anim.onfinish = function () { if (img.parentNode) img.parentNode.removeChild(img); };
-    } else {
-      setTimeout(function () { if (img.parentNode) img.parentNode.removeChild(img); }, 750);
-    }
+    document.body.classList.remove('locked');
   };
 
   Cart.flash = function () {
@@ -162,17 +265,34 @@
     setTimeout(function () { f.classList.remove('fire'); }, 180);
   };
 
-  /* Init : bind boutons communs */
+  /* ---------- init : écouteurs délégués ---------- */
   Cart.bind = function () {
     var cartBtn = document.getElementById('cart-btn');
     var cartClose = document.getElementById('cart-close');
     var cov = document.getElementById('cov');
-    if (cartBtn) cartBtn.addEventListener('click', Cart.open);
-    if (cartClose) cartClose.addEventListener('click', Cart.close);
-    if (cov) cov.addEventListener('click', Cart.close);
+    if (cartBtn) cartBtn.addEventListener('click', function () { Cart.open(); });
+    if (cartClose) cartClose.addEventListener('click', function () { Cart.close(); });
+    if (cov) cov.addEventListener('click', function () { Cart.close(); });
+
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') Cart.close();
     });
+
+    // Délégation : remplace les onclick inline (plus aucune donnée
+    // stockée n'est interprétée comme du code).
+    var bd = document.getElementById('c-bd');
+    if (bd) bd.addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== bd && !(t.getAttribute && t.getAttribute('data-cart-action'))) t = t.parentNode;
+      if (!t || t === bd) return;
+      var action = t.getAttribute('data-cart-action');
+      var idx = parseInt(t.getAttribute('data-cart-index'), 10);
+      if (isNaN(idx) || idx < 0 || idx >= items.length) return;
+      if (action === 'inc') setQty(idx, items[idx].qty + 1);
+      else if (action === 'dec') setQty(idx, items[idx].qty - 1);
+      else if (action === 'remove') { items.splice(idx, 1); save(); Cart.updateBadge(false); Cart.render(); }
+    });
+
     Cart.updateBadge(false);
   };
 
