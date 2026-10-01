@@ -2,9 +2,41 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+
+<!-- ============ SÉCURITÉ ============
+     Site 100 % statique : aucune ressource externe, aucun appel réseau.
+     La CSP verrouille donc tout sauf l'origine elle-même. Les styles et
+     scripts étant inline (pas d'étape de build sur GitHub Pages),
+     'unsafe-inline' reste nécessaire ; en contrepartie plus aucune
+     donnée n'est injectée dans du HTML (voir js/cart.js).
+     Note : frame-ancestors et X-Frame-Options ne sont pas applicables
+     via <meta> — ils exigent un vrai en-tête HTTP (cf. README). -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  img-src 'self' data:;
+  font-src 'self';
+  style-src 'self' 'unsafe-inline';
+  script-src 'self' 'unsafe-inline';
+  connect-src 'none';
+  form-action 'self';
+  upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F5F0E8">
 <meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='32' y='42' font-family='Georgia,serif' font-size='21' letter-spacing='-1' fill='%23151515' text-anchor='middle'>1866</text></svg>">
+
+<!-- Les animations d'apparition ne sont armées que si JS tourne :
+     sans JS (ou si le script est bloqué), le contenu reste visible. -->
+<script>document.documentElement.className += ' js';</script>
+<noscript><style>
+  [data-reveal],[data-words] .w{opacity:1!important;transform:none!important;filter:none!important}
+  .wipe::after{transform:scaleY(0)!important}
+  #intro{display:none!important}
+</style></noscript>
 
 <title>Maison 1866 — Abyss Tee · Chapter I</title>
 <meta name="description" content="Maison 1866 — Abyss Tee. Tee-shirt noir premium, coton lourd 240 GSM, coupe oversize. Washed black, impression crème au dos. Made for silence. 59 €.">
@@ -145,6 +177,11 @@ ul{list-style:none}
 @keyframes inLine{to{width:min(220px,44vw)}}
 @keyframes inFade{to{opacity:1}}
 #intro.done{transform:translateY(-100%);transition:transform 1s var(--e-inout);pointer-events:none}
+/* Filet CSS : même si le JS ne tourne jamais, l'intro se retire à 4 s
+   et le défilement n'est jamais verrouillé en dur dans le HTML. */
+#intro{animation:introFailsafe 0s linear 4s forwards}
+@keyframes introFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+body:has(#intro:not(.done)){overflow:hidden}
 
 /* ============================================================
    HEADER
@@ -246,11 +283,11 @@ section{position:relative}
 .sec-label .t{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-2)}
 .sec-label .rule{flex:1;height:1px;background:var(--line)}
 
-/* ---- REVEAL ---- */
-[data-reveal]{opacity:0;transform:translateY(30px);
+/* ---- REVEAL (armé uniquement si JS tourne) ---- */
+.js [data-reveal]{opacity:0;transform:translateY(30px);
   transition:opacity .9s var(--e-out),transform .9s var(--e-out)}
-[data-reveal="fade"]{transform:none}
-[data-reveal].in{opacity:1;transform:none}
+.js [data-reveal="fade"]{transform:none}
+.js [data-reveal].in{opacity:1;transform:none}
 
 /* ============================================================
    HERO
@@ -458,8 +495,10 @@ section{position:relative}
    STORY
    ============================================================ */
 #story{padding:clamp(70px,12vw,150px) 0;background:var(--surface)}
-.story-num{font-family:var(--serif);font-size:clamp(64px,16vw,180px);line-height:.8;color:var(--ink);opacity:.14;letter-spacing:-.03em;margin-bottom:-.15em}
-.story-text{font-family:var(--serif);font-size:clamp(26px,5.4vw,50px);line-height:1.28;letter-spacing:-.01em;color:var(--ink);max-width:20ch}
+.story-num{font-family:var(--serif);font-size:clamp(64px,16vw,180px);line-height:.95;color:var(--ink);opacity:.12;letter-spacing:-.03em;margin-bottom:clamp(10px,2vw,22px)}
+/* Pas de max-width : chaque .ln doit tenir sur UNE ligne, sinon le
+   masque (overflow:hidden) couperait un retour à la ligne involontaire. */
+.story-text{font-family:var(--serif);font-size:clamp(22px,5.2vw,46px);line-height:1.3;letter-spacing:-.01em;color:var(--ink)}
 .story-text .ln{display:block;overflow:hidden}
 .story-text .ln > span{display:block}
 .story-sub{margin-top:34px;max-width:46ch;color:var(--ink-2);font-size:15px;line-height:1.8}
@@ -600,9 +639,54 @@ section{position:relative}
   mix-blend-mode:multiply}
 
 /* ============================================================
+   MOTION — patterns additionnels
+   (patterns type 21st.dev — blur text reveal, spotlight card,
+   mask reveal, scroll-velocity marquee, shimmer — réécrits en
+   vanilla pour cette stack et recalés sur l'identité 1866)
+   ============================================================ */
+
+/* 1. Révélation du texte mot à mot (blur rise) */
+.js [data-words] .w{display:inline-block;opacity:0;transform:translateY(.45em);filter:blur(10px);
+  transition:opacity .85s var(--e-out),transform .85s var(--e-out),filter .85s var(--e-out)}
+.js [data-words].in .w{opacity:1;transform:none;filter:blur(0)}
+
+/* 2. Spotlight card — une lueur chaude suit le pointeur (desktop) */
+.spot{position:relative;isolation:isolate}
+.spot::before{content:"";position:absolute;inset:0;z-index:0;opacity:0;pointer-events:none;
+  transition:opacity .45s var(--e-out);
+  background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(166,132,94,.18),transparent 62%)}
+.spot:hover::before{opacity:1}
+.spot > *{position:relative;z-index:1}
+
+/* 3. Mask reveal — un panneau se retire pour dévoiler l'image */
+.wipe{position:relative}
+.js .wipe::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:var(--wipe,var(--bg));transform-origin:50% 100%;transform:scaleY(1);
+  transition:transform 1.15s var(--e-inout)}
+.js .wipe.in::after{transform:scaleY(0)}
+
+/* 4. Marquee réactif au scroll */
+.marquee-inner{display:block}
+
+/* 5. Hamburger qui se transforme en croix */
+.h-menu.open span:nth-child(1){transform:translateY(3.25px) rotate(45deg)}
+.h-menu.open span:nth-child(2){transform:translateY(-3.25px) rotate(-45deg)}
+
+/* 6. Shimmer — micro-feedback sur les CTA */
+.btn::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;z-index:2;
+  pointer-events:none;opacity:0;transform:skewX(-18deg);
+  background:linear-gradient(100deg,transparent,rgba(245,240,232,.22),transparent)}
+.btn:hover::after{opacity:1;animation:sheen .85s var(--e-out)}
+@keyframes sheen{0%{left:-70%}100%{left:130%}}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
+  [data-words] .w{opacity:1!important;transform:none!important;filter:none!important}
+  .wipe::after{transform:scaleY(0)!important}
+  .spot::before{display:none}
+  .btn::after{display:none}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
     transition-duration:.001ms!important;scroll-behavior:auto!important}
   [data-reveal]{opacity:1!important;transform:none!important}
@@ -636,7 +720,7 @@ section{position:relative}
 </script>
 </head>
 
-<body class="locked">
+<body>
 
 <div id="grain" aria-hidden="true"></div>
 <div id="progress" aria-hidden="true"></div>
@@ -698,7 +782,7 @@ section{position:relative}
   <div class="hero-inner">
     <div class="hero-eyebrow" data-reveal><span class="dot"></span><span class="eyebrow">Maison 1866 — Chapter I</span></div>
 
-    <h1 class="hero-head" data-reveal>
+    <h1 class="hero-head" data-words>
       <span class="l1">The crime is</span>
       <span class="l2">within.</span>
     </h1>
@@ -728,12 +812,14 @@ section{position:relative}
 
 <!-- ============ MARQUEE ============ -->
 <div class="marquee" aria-hidden="true">
+  <div class="marquee-inner" id="marq-inner">
   <div class="marquee-track" id="marq">
     <span>Heavyweight Cotton<span class="sep">•</span></span>
     <span>Oversized Fit<span class="sep">•</span></span>
     <span>Chapter I<span class="sep">•</span></span>
     <span>Maison 1866<span class="sep">•</span></span>
     <span>Made for silence<span class="sep">•</span></span>
+  </div>
   </div>
 </div>
 
@@ -813,10 +899,10 @@ section{position:relative}
     <div class="within-grid">
       <div class="within-copy">
         <div class="eyebrow" data-reveal>Cream Back Print</div>
-        <h2 class="within-h" data-reveal>The Crime<br>Is <em>Within</em></h2>
+        <h2 class="within-h" data-words>The Crime<br>Is <em>Within</em></h2>
         <p class="within-p" data-reveal>Une impression crème, épaisse, presque sculpturale. Le dos devient un manifeste silencieux — porté sur le coton washed black du 240 GSM.</p>
       </div>
-      <div class="within-img" data-reveal="fade">
+      <div class="within-img wipe" style="--wipe:var(--deep-2)" data-reveal="fade">
         <img data-img="back" alt="Abyss Tee — dos, impression crème The Crime Is Within">
       </div>
     </div>
@@ -850,9 +936,9 @@ section{position:relative}
     <p class="story-sub" data-reveal>Maison 1866 dessine des pièces pensées pour durer — matières choisies, design intemporel, rien de superflu. Less noise. More weight.</p>
 
     <div class="pillars">
-      <div class="pillar" data-reveal><div class="n">240 GSM</div><h3>Coton dense</h3><p>Un grammage lourd qui tient dans le temps et se patine avec l'usage.</p></div>
-      <div class="pillar" data-reveal><div class="n">Oversize</div><h3>Coupe contemporaine</h3><p>Une silhouette ample et nette, sans compromis sur la tenue.</p></div>
-      <div class="pillar" data-reveal><div class="n">Chapter I</div><h3>Première collection</h3><p>Le premier chapitre d'une maison qui écrit son histoire lentement.</p></div>
+      <div class="pillar spot" data-reveal><div class="n">240 GSM</div><h3>Coton dense</h3><p>Un grammage lourd qui tient dans le temps et se patine avec l'usage.</p></div>
+      <div class="pillar spot" data-reveal><div class="n">Oversize</div><h3>Coupe contemporaine</h3><p>Une silhouette ample et nette, sans compromis sur la tenue.</p></div>
+      <div class="pillar spot" data-reveal><div class="n">Chapter I</div><h3>Première collection</h3><p>Le premier chapitre d'une maison qui écrit son histoire lentement.</p></div>
     </div>
   </div>
 </section>
@@ -892,7 +978,7 @@ section{position:relative}
     </div>
     <div class="contact-grid">
       <div>
-        <h2 class="contact-h serif" data-reveal>Écrivez-<br>nous.</h2>
+        <h2 class="contact-h serif" data-words>Écrivez-<br>nous.</h2>
         <p class="contact-lead" data-reveal>Une question sur la pièce, la maison, ou Chapter II ? Nous lisons chaque message.</p>
         <form id="contact-form" novalidate style="margin-top:34px" data-reveal>
           <div class="field">
@@ -913,7 +999,7 @@ section{position:relative}
       </div>
 
       <div>
-        <div class="news" data-reveal>
+        <div class="news spot" data-reveal>
           <h3 class="serif">Chapter II<br>begins here.</h3>
           <p>Recevez le prochain chapitre en avant-première. Rien d'autre.</p>
           <form class="news-form" id="news-form" novalidate>
@@ -1037,7 +1123,10 @@ section{position:relative}
     $$('[data-img]').forEach(function (el) {
       el.src = (el.getAttribute('data-img') === 'back') ? IMG.back : IMG.front;
     });
-    if (typeof Cart !== 'undefined') Cart.setImage(IMG.front);
+    if (typeof Cart !== 'undefined') {
+      Cart.setImage(IMG.front);
+      Cart.setCatalog([PRODUCT]); // le prix affiché vient du code, jamais du stockage
+    }
   } catch (e) {}
 
   /* ---------------------------------------------------------
@@ -1079,20 +1168,64 @@ section{position:relative}
   /* ---------------------------------------------------------
      4. REVEAL (IntersectionObserver)
      --------------------------------------------------------- */
+  /* Découpe mot à mot (révélation « blur rise »). On ne touche qu'aux
+     nœuds texte : <br>, <em>… sont préservés tels quels. */
+  function splitWords(host) {
+    Array.prototype.slice.call(host.childNodes).forEach(function (n) {
+      if (n.nodeType === 3) {
+        var frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach(function (p) {
+          if (!p) return;
+          if (/^\s+$/.test(p)) { frag.appendChild(document.createTextNode(p)); return; }
+          var s = document.createElement('span');
+          s.className = 'w'; s.textContent = p;
+          frag.appendChild(s);
+        });
+        host.replaceChild(frag, n);
+      } else if (n.nodeType === 1 && n.tagName !== 'BR') {
+        splitWords(n);
+      }
+    });
+  }
+  $$('[data-words]').forEach(function (h) {
+    splitWords(h);
+    $$('.w', h).forEach(function (w, i) { w.style.transitionDelay = (i * 0.055) + 's'; });
+  });
+
+  var ANIM = '[data-reveal],[data-words],.wipe';
   if ('IntersectionObserver' in window && !RM) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-    $$('[data-reveal]').forEach(function (el, i) {
+    $$(ANIM).forEach(function (el, i) {
       // léger stagger pour les groupes proches
-      el.style.transitionDelay = (Math.min(i % 4, 3) * 0.06) + 's';
+      if (el.hasAttribute('data-reveal')) el.style.transitionDelay = (Math.min(i % 4, 3) * 0.06) + 's';
       io.observe(el);
     });
   } else {
-    $$('[data-reveal]').forEach(function (el) { el.classList.add('in'); });
+    $$(ANIM).forEach(function (el) { el.classList.add('in'); });
   }
+
+  /* Marquee réactif au scroll : la bande se décale avec l'élan,
+     puis revient doucement au repos. */
+  (function () {
+    var inner = $('#marq-inner');
+    if (!inner || RM) return;
+    var off = 0, target = 0, lastY = window.pageYOffset || 0;
+    window.addEventListener('scroll', function () {
+      var y = window.pageYOffset || document.documentElement.scrollTop;
+      target = Math.max(-140, Math.min(140, target + (y - lastY) * 0.9));
+      lastY = y;
+    }, { passive: true });
+    (function loop() {
+      target *= 0.92;
+      off += (target - off) * 0.12;
+      inner.style.transform = 'translate3d(' + off.toFixed(1) + 'px,0,0)';
+      requestAnimationFrame(loop);
+    })();
+  })();
 
   /* ---------------------------------------------------------
      4b. HERO — RÉVÉLATION SPOTLIGHT (face → dos)
@@ -1183,13 +1316,13 @@ section{position:relative}
   var menu = $('#menu'), menuBtn = $('#menu-btn'), menuClose = $('#menu-close');
   function openMenu() {
     menu.classList.add('open'); menu.setAttribute('aria-hidden', 'false');
-    menuBtn.setAttribute('aria-expanded', 'true');
+    menuBtn.setAttribute('aria-expanded', 'true'); menuBtn.classList.add('open');
     document.body.classList.add('locked');
     var first = $('.m-nav a', menu); if (first) setTimeout(function () { first.focus(); }, 300);
   }
   function closeMenu() {
     menu.classList.remove('open'); menu.setAttribute('aria-hidden', 'true');
-    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.classList.remove('open');
     if (!$('#cart').classList.contains('open')) document.body.classList.remove('locked');
   }
   if (menuBtn) menuBtn.addEventListener('click', openMenu);
@@ -1347,6 +1480,15 @@ section{position:relative}
      13. BOUTONS MAGNÉTIQUES + CURSEUR (desktop only)
      --------------------------------------------------------- */
   if (FINE && !RM) {
+    /* Spotlight cards : une lueur chaude suit le pointeur */
+    $$('.spot').forEach(function (card) {
+      card.addEventListener('pointermove', function (e) {
+        var r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    });
+
     $$('[data-magnetic]').forEach(function (el) {
       el.addEventListener('pointermove', function (e) {
         var r = el.getBoundingClientRect();
