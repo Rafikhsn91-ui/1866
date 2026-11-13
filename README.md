@@ -1,139 +1,98 @@
 # Maison 1866 — Chapter I
 
-Site de marque pour **Maison 1866**. Pièce principale : **Abyss Tee**, 59 €.
-Expérience éditoriale mono-page : révélation face/dos au curseur, storytelling
-au scroll, panier persistant.
-
-Stack : **HTML / CSS / JavaScript vanilla**. Aucune étape de build, aucun
-`npm install`, aucune dépendance externe — le dépôt se déploie tel quel.
+Boutique en ligne de **Maison 1866**. Pièce principale : **Abyss Tee**, 39,99 €.
+Site statique (HTML / CSS / JavaScript vanilla) + deux petites fonctions serveur
+Vercel pour le paiement et les e-mails. Aucune étape de build, aucun `npm install`.
 
 ## Structure
 
 ```
 /
-├── index.html          ← l'expérience complète (hero, produit, story, FAQ, contact)
-├── 404.html            ← page d'erreur (servie automatiquement par GitHub Pages)
-├── lookbook.html       ← galerie visuelle
-├── story.html          ← histoire de la marque
-├── img/
-│   ├── abyss-front.webp
-│   └── abyss-back.webp ← photos produit (vrais fichiers, préchargeables)
-├── css/
-│   └── effects.css     ← effets partagés (pages secondaires)
+├── index.html            ← la boutique (hero, produit, histoire, FAQ, contact)
+├── commande.html         ← panier → livraison → CGV → paiement Stripe
+├── merci.html            ← retour après paiement réussi
+├── retractation.html     ← « Renoncer au contrat ici » (obligatoire depuis le 19/06/2026)
+├── cgv.html              ← conditions générales de vente
+├── mentions-legales.html
+├── confidentialite.html
+├── 404.html
+├── api/
+│   ├── checkout.js       ← crée la session de paiement Stripe (PRIX CÔTÉ SERVEUR)
+│   └── message.js        ← e-mails : rétractation (accusé de réception), contact, newsletter
 ├── js/
-│   ├── images.js       ← chemins des photos — chargé en 1er
-│   ├── cart.js         ← panier partagé (localStorage) — source de vérité unique
-│   ├── animations.js   ← moteur d'animations (pages secondaires)
-│   └── tshirt3d.js     ← moteur 3D (pages secondaires)
-└── README.md
+│   ├── config.js         ← ★ TA FICHE D'IDENTITÉ : SIRET, adresse, médiateur, IDU…
+│   ├── cart.js           ← panier partagé (localStorage)
+│   ├── commande.js       ← logique de la page de commande + carte Mondial Relay
+│   ├── retractation.js   ← formulaire de rétractation en 2 étapes
+│   ├── pages.js          ← remplit les pages légales depuis config.js
+│   ├── merci.js
+│   └── images.js
+├── css/pages.css         ← style des pages secondaires
+├── img/                  ← photos produit
+├── vendor/               ← jQuery 2.2.4 + Leaflet 1.9.4 (exigés par la carte Mondial Relay)
+└── vercel.json           ← en-têtes de sécurité
 ```
 
-**Important** : garde les dossiers `css/` et `js/` tels quels. Les pages y font
-référence en chemin relatif, donc tout fonctionne sans configuration sur
-GitHub Pages comme sur Vercel.
+## Mise en route — dans l'ordre
 
-## Lancer en local
+La boutique reste **fermée** (« Les commandes ouvrent très bientôt ») tant que les
+étapes 1 à 6 ne sont pas faites. Rien ne peut être vendu par erreur.
 
-Ouvrir `index.html` suffit, mais pour tester le `localStorage` et la CSP dans
-des conditions réelles, servir le dossier en HTTP :
+1. **SIRET** — déclarer la micro-entreprise (achat-revente) sur le guichet unique de l'INPI.
+2. **Médiateur de la consommation** — adhérer à un médiateur référencé (quelques dizaines d'€/an).
+3. **Refashion** — s'enregistrer comme metteur sur le marché de textiles et obtenir l'**IDU**.
+4. **Remplir `js/config.js`** — nom, adresse, téléphone, e-mail, SIRET, IDU, médiateur.
+   Tout champ vide apparaît en surligné « [À compléter] » sur les pages légales.
+5. **E-mails (Resend)** — créer un compte sur resend.com, y vérifier un nom de domaine,
+   puis dans Vercel → *Settings → Environment Variables* :
+   - `RESEND_API_KEY` = la clé API
+   - `EMAIL_FROM` = `Maison 1866 <contact@ton-domaine.fr>`
+   - `EMAIL_BOUTIQUE` = ta boîte de réception
+6. **Stripe** — compte Stripe avec ton SIRET, puis dans Vercel :
+   - `STRIPE_SECRET_KEY` = `sk_test_…` pour tester (carte `4242 4242 4242 4242`), puis `sk_live_…`
+   - Dans Stripe → *Paramètres → E-mails clients* : activer les reçus de paiement.
+   - Dans Stripe → *Paramètres → Notifications* : activer l'alerte « paiement réussi » pour toi.
+7. **Mondial Relay** — compte pro, puis remplacer `'BDTEST  '` (code de test) par ton code
+   enseigne dans `js/config.js`. Laisser vide = simple champ « point relais choisi » à la place de la carte.
+8. **Ouvrir** — dans Vercel, ajouter `VENTES_OUVERTES` = `oui`, puis *Redeploy*.
 
-```bash
-python3 -m http.server 8000
-# puis http://127.0.0.1:8000
-```
+Après chaque changement de variable d'environnement, il faut redéployer.
 
-## Activer GitHub Pages
+## Traiter une commande
 
-1. Repo → Settings → Pages
-2. Source : `Deploy from a branch`
-3. Branch : `main` / dossier `/ (root)`
-4. Cocher **Enforce HTTPS**
+Chaque paiement apparaît dans Stripe (*Paiements*). Dans le détail : nom, e-mail,
+téléphone, adresse, et dans **Métadonnées** : `articles` (tailles × quantités),
+`livraison` (relais ou domicile) et `relais` (point relais choisi + numéro).
+Tu crées l'étiquette sur ton compte Mondial Relay ou Colissimo, puis tu envoies
+le numéro de suivi au client.
 
-Le site sera en ligne sur `https://<ton-user>.github.io/<repo>/`.
+Une rétractation envoyée depuis le site arrive dans `EMAIL_BOUTIQUE` avec l'objet
+`[Rétractation]`. Remboursement depuis Stripe (*Paiement → Rembourser*), au plus
+tard 14 jours après la déclaration ; frais de port remboursés à hauteur de 4,90 €.
+
+## Changer un prix
+
+Deux endroits, à garder identiques :
+- `api/checkout.js` → `PRODUIT.prix` (en centimes) et `LIVRAISON` — **fait foi pour le paiement** ;
+- `js/config.js` → `produit.prix` et `livraison` — affichage.
+Puis les textes « 39,99 € » de `index.html` (prix, bouton, méta) et la FAQ livraison.
 
 ## Sécurité
 
-Le site est statique, sans backend, sans cookie et sans compte : la surface
-d'attaque est volontairement minimale.
+- Le navigateur n'envoie que tailles, quantités et mode de livraison : **impossible de
+  modifier un prix** depuis le site. Le montant est recalculé par `api/checkout.js`.
+- Aucune donnée bancaire ne transite par le site (paiement hébergé par Stripe).
+- Les clés secrètes vivent uniquement dans les variables d'environnement Vercel,
+  jamais dans le dépôt (qui est public).
+- CSP stricte sur chaque page ; seule `commande.html` autorise Mondial Relay et les
+  fonds de carte. En-têtes HTTP (`nosniff`, `frame-ancestors 'none'`…) via `vercel.json`.
+- Le panier (`localStorage`) est traité comme non fiable et re-validé (`js/cart.js`).
+- Les fonctions refusent les requêtes mal formées, limitent les longueurs et ont un
+  pot de miel anti-robots.
 
-Mesures en place :
+## Tester en local
 
-- **Aucune ressource externe** — polices système, images inline en base64,
-  zéro CDN. Rien à compromettre en amont (pas de supply chain).
-- **Pas d'injection HTML** — `js/cart.js` rend le panier uniquement via l'API
-  DOM (`textContent`), jamais `innerHTML`, et n'utilise plus d'`onclick`
-  inline mais des écouteurs délégués. Une donnée piégée dans le `localStorage`
-  s'affiche comme du texte, elle ne s'exécute pas.
-- **Données du `localStorage` traitées comme non fiables** — re-validation des
-  types et longueurs, quantités bornées (1–10), 20 lignes maximum, et le
-  **prix vient toujours du catalogue défini dans le code**, jamais d'une
-  valeur stockée côté client. Clé versionnée (`m1866.cart.v1`).
-- **CSP** via `<meta>` : `default-src 'self'`, `object-src 'none'`,
-  `connect-src 'none'`, `base-uri 'self'`, `img-src 'self' data:`.
-  Un script externe injecté est bloqué.
-- **Dégradation sûre** — sans JavaScript, le contenu reste visible et la page
-  reste défilable ; l'écran d'intro se retire tout seul (filet CSS).
-- `referrer` en `strict-origin-when-cross-origin`.
-
-## Accessibilité
-
-- Contrastes **conformes WCAG AA** (≥ 4.5:1) sur tous les fonds, y compris la
-  section sombre `#within` qui redéfinit ses propres tokens de texte.
-- Piège de focus dans le panier et le menu, focus rendu au déclencheur
-  à la fermeture, fermeture au clavier par `Échap`.
-- Onglets Face/Dos navigables aux flèches ← →, lien d'évitement en début de page.
-- `prefers-reduced-motion` respecté partout.
-
-### Limite connue
-
-`frame-ancestors` (anti-clickjacking) et `X-Content-Type-Options` **ne sont pas
-applicables via `<meta>`** : ils exigent de vrais en-têtes HTTP, que GitHub
-Pages ne permet pas de configurer. Pour les activer, servir le site derrière
-Cloudflare, Netlify ou Vercel et ajouter :
-
-```
-Content-Security-Policy: frame-ancestors 'none'
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-```
-
-Comme le site n'a ni authentification ni action sensible, l'impact réel du
-clickjacking reste faible en l'état.
-
-## Changer le produit
-
-Le produit est centralisé dans `index.html` (objet `PRODUCT`) :
-
-```js
-{ id:'abyss-tee', name:'Abyss Tee', price:59, currency:'EUR',
-  material:'Coton lourd', gsm:240, fit:'Oversize', color:'Washed Black',
-  sizes:['S','M','L','XL'] }
-```
-
-Le prix est ensuite transmis au panier via `Cart.setCatalog([PRODUCT])`, qui
-fait foi. Penser à mettre à jour le libellé du bouton « Ajouter au panier » et
-les données structurées JSON-LD en haut de `index.html`.
-
-## Changer les images
-
-Remplacer les fichiers dans `img/` (`abyss-front.webp`, `abyss-back.webp`).
-Les chemins sont centralisés dans `js/images.js` ; `index.html` les écrit aussi
-en dur dans les `<img src>` pour que le navigateur les précharge sans attendre
-le JavaScript.
-
-Penser à mettre à jour les attributs `width`/`height` des `<img>` si les
-dimensions changent — ils évitent tout décalage de mise en page (CLS = 0).
-
-Les photos sur **fond blanc** sont recommandées : le site les fond dans le fond
-crème via `mix-blend-mode: multiply`, ce qui fait disparaître le rectangle.
-
-> Note technique : pour que ce fondu fonctionne, le conteneur de l'image doit
-> porter la couleur de fond, et l'image ne doit avoir ni `filter`, ni
-> `transform`, ni `will-change` (cela isolerait la couche et casserait le blend).
-
-## Paiement
-
-Le paiement n'est **pas** connecté. Le bouton affiche clairement
-« Paiement bientôt disponible ». Les formulaires de contact et de newsletter
-donnent un retour visuel mais n'envoient rien (aucun backend). Pour accepter
-de vrais paiements, brancher Stripe (Checkout ou Payment Links) sur `#checkout`.
+Les pages s'ouvrent avec un simple serveur (`python3 -m http.server`), mais les
+fonctions `api/` ne tournent que sur Vercel (ou avec `npx vercel dev`).
+Sans elles, la page de commande affiche « Les commandes ouvrent très bientôt »
+et les formulaires proposent l'e-mail.

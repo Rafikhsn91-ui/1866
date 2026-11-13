@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- CSP élargie à Mondial Relay (carte des points relais) et aux fonds
+     de carte OpenStreetMap ; tout le reste reste limité au site. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.mondialrelay.com; style-src 'self' 'unsafe-inline' https://*.mondialrelay.com; img-src 'self' data: https:; font-src 'self' data: https://*.mondialrelay.com; connect-src 'self' https://*.mondialrelay.com; frame-src https://*.mondialrelay.com; form-action 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F0E8">
+<meta name="robots" content="noindex">
+<title>Commande — Maison 1866</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='32' y='42' font-family='Georgia,serif' font-size='21' letter-spacing='-1' fill='%23151515' text-anchor='middle'>1866</text></svg>">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+</head>
+<body>
+<a href="#contenu" class="skip">Aller au contenu</a>
+<header class="p-hdr">
+  <a href="index.html" class="p-logo" aria-label="Maison 1866 — accueil">1866</a>
+  <a href="index.html#shop" class="p-back">← Continuer mes achats</a>
+</header>
+
+<main id="contenu">
+  <p class="eyebrow">Maison 1866 — Chapter I</p>
+  <h1>Votre commande</h1>
+
+  <div class="notice" id="etat" hidden></div>
+
+  <div class="steps">
+    <!-- 01 PANIER -->
+    <section aria-labelledby="h-panier">
+      <div class="step-h"><span class="n">01</span><h2 id="h-panier">Panier</h2></div>
+      <div class="lines" id="lines"></div>
+    </section>
+
+    <!-- 02 LIVRAISON -->
+    <section aria-labelledby="h-livr">
+      <div class="step-h"><span class="n">02</span><h2 id="h-livr">Livraison</h2></div>
+      <p style="font-size:13px;color:var(--ink-3);margin-bottom:14px">Livraison en <span data-cfg="livraison.zone"></span>. Expédition <span data-cfg="livraison.expedition"></span>.</p>
+      <div class="opts" role="radiogroup" aria-label="Mode de livraison">
+        <label class="opt">
+          <input type="radio" name="livraison" value="relais" checked>
+          <span><span class="t" data-cfg="livraison.relais.libelle"></span><span class="d" style="display:block"><span data-cfg="livraison.relais.delai"></span> après expédition</span></span>
+          <span class="p" data-cfg="livraison.relais.prix" data-cfg-type="prix"></span>
+        </label>
+        <label class="opt">
+          <input type="radio" name="livraison" value="domicile">
+          <span><span class="t" data-cfg="livraison.domicile.libelle"></span><span class="d" style="display:block"><span data-cfg="livraison.domicile.delai"></span> après expédition — adresse saisie au paiement</span></span>
+          <span class="p" data-cfg="livraison.domicile.prix" data-cfg-type="prix"></span>
+        </label>
+      </div>
+
+      <div id="relais-zone">
+        <p class="lbl" id="relais-lbl" style="margin-top:22px">Votre point relais</p>
+        <div id="Zone_Widget"></div>
+        <input type="hidden" id="Retour_Widget">
+        <div class="field" id="relais-manuel" hidden>
+          <label for="relais-saisie">Point relais choisi</label>
+          <input id="relais-saisie" type="text" maxlength="200" placeholder="Nom et adresse du point relais Mondial Relay">
+          <p class="hint">Trouvez le point le plus proche sur <a href="https://www.mondialrelay.fr/trouver-le-point-relais-le-plus-proche-de-chez-moi/" target="_blank" rel="noopener">mondialrelay.fr</a>, puis recopiez son nom et son adresse.</p>
+        </div>
+        <div class="relais-pick none" id="relais-pick" aria-live="polite">Aucun point relais sélectionné.</div>
+      </div>
+    </section>
+
+    <!-- 03 RÉCAPITULATIF -->
+    <section aria-labelledby="h-recap">
+      <div class="step-h"><span class="n">03</span><h2 id="h-recap">Récapitulatif</h2></div>
+      <div class="totals">
+        <div class="row"><span>Sous-total</span><span id="t-sub">—</span></div>
+        <div class="row"><span>Livraison</span><span id="t-ship">—</span></div>
+        <div class="row grand"><span>Total</span><span class="v" id="t-total">—</span></div>
+        <p class="tva" data-cfg="exploitant.tva"></p>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" id="cgv">
+        <span>J'ai lu et j'accepte les <a href="cgv.html" target="_blank">conditions générales de vente</a>, notamment le droit de rétractation de 14 jours (frais de renvoi à ma charge).</span>
+      </label>
+
+      <button type="button" class="btn block" id="pay"><span class="t">Commander avec obligation de paiement</span></button>
+      <p class="msg" id="pay-msg" role="status" aria-live="polite"></p>
+      <p class="secure">Paiement sécurisé par Stripe. Vous indiquerez vos coordonnées sur la page suivante.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="p-foot">
+  <nav aria-label="Informations légales">
+    <a href="index.html">Boutique</a>
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="cgv.html#livraison">Livraison &amp; retours</a>
+    <a href="confidentialite.html">Confidentialité</a>
+    <a href="retractation.html" class="retract">Renoncer au contrat ici</a>
+  </nav>
+  <p>© <span data-year>2026</span> Maison 1866</p>
+</footer>
+<script src="js/config.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/images.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/commande.js"></script>
+</body>
+</html>

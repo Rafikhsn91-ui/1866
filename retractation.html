@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F0E8">
+<title>Renoncer au contrat — Maison 1866</title>
+<meta name="description" content="Exercez votre droit de rétractation en ligne, en deux étapes, avec accusé de réception par e-mail.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='32' y='42' font-family='Georgia,serif' font-size='21' letter-spacing='-1' fill='%23151515' text-anchor='middle'>1866</text></svg>">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<a href="#contenu" class="skip">Aller au contenu</a>
+<header class="p-hdr">
+  <a href="index.html" class="p-logo" aria-label="Maison 1866 — accueil">1866</a>
+  <a href="index.html" class="p-back">← Boutique</a>
+</header>
+
+<main id="contenu" class="legal">
+  <p class="eyebrow">Droit de rétractation</p>
+  <h1>Renoncer au contrat</h1>
+  <p class="lead">Vous disposez de quatorze jours à compter de la réception de votre commande pour y renoncer, sans avoir à vous justifier. Aucun compte n'est nécessaire.</p>
+
+  <div class="notice">
+    <strong>Comment ça marche</strong> — 1. Cliquez sur « Renoncer au contrat ici ». 2. Indiquez votre nom, votre e-mail et votre commande, puis cliquez sur « Confirmer la rétractation ». Vous recevez aussitôt par e-mail un accusé de réception reprenant votre déclaration, avec sa date et son heure. Les conditions de renvoi et de remboursement figurent dans les <a href="cgv.html#retractation">CGV</a>.
+  </div>
+
+  <button type="button" class="btn" id="r-open" aria-expanded="false" aria-controls="r-form"><span class="t">Renoncer au contrat ici</span></button>
+
+  <form id="r-form" novalidate hidden style="margin-top:34px">
+    <h2 style="margin-top:0">Votre déclaration</h2>
+    <div class="field">
+      <label for="r-nom">Nom et prénom</label>
+      <input id="r-nom" name="nom" type="text" autocomplete="name" maxlength="120" required>
+    </div>
+    <div class="field">
+      <label for="r-email">E-mail pour recevoir l'accusé de réception</label>
+      <input id="r-email" name="email" type="email" autocomplete="email" maxlength="160" required>
+    </div>
+    <div class="field">
+      <label for="r-commande">Commande concernée</label>
+      <input id="r-commande" name="commande" type="text" maxlength="160" required placeholder="N° du reçu, ou date de commande">
+      <p class="hint">Le numéro figure sur l'e-mail de confirmation (reçu Stripe). À défaut, indiquez la date et le montant de la commande.</p>
+    </div>
+    <div class="field">
+      <label for="r-articles">Articles concernés <span style="text-transform:none;letter-spacing:0">(facultatif)</span></label>
+      <textarea id="r-articles" name="articles" maxlength="1000" placeholder="Laissez vide pour toute la commande. Ex. : 1 Abyss Tee taille M"></textarea>
+    </div>
+    <div class="hp" aria-hidden="true">
+      <label for="r-site">Ne pas remplir</label>
+      <input id="r-site" name="site" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <p style="font-size:14.5px;color:var(--ink-2);margin:6px 0 18px">Je notifie par la présente ma rétractation du contrat portant sur la vente des biens indiqués ci-dessus.</p>
+    <button type="submit" class="btn block" id="r-submit"><span class="t">Confirmer la rétractation</span></button>
+    <p class="msg" id="r-msg" role="status" aria-live="polite"></p>
+  </form>
+
+  <section id="r-done" hidden>
+    <h2>Rétractation enregistrée</h2>
+    <p id="r-done-txt"></p>
+    <p>Renvoyez ensuite le ou les articles, dans leur état d'origine, au plus tard quatorze jours après aujourd'hui, à l'adresse : <span data-cfg="exploitant.adresse"></span>. Les frais de renvoi sont à votre charge. Le remboursement intervient au plus tard quatorze jours après réception de votre déclaration, et peut être différé jusqu'à réception du colis ou de sa preuve d'expédition.</p>
+  </section>
+
+  <h2>Autres moyens</h2>
+  <p>Vous pouvez aussi nous adresser votre décision par e-mail à <span data-cfg="exploitant.email" data-cfg-type="email"></span> ou par courrier, par exemple avec le <a href="cgv.html#formulaire">modèle de formulaire de rétractation</a>.</p>
+</main>
+
+<footer class="p-foot">
+  <nav aria-label="Informations légales">
+    <a href="index.html">Boutique</a>
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="cgv.html#livraison">Livraison &amp; retours</a>
+    <a href="confidentialite.html">Confidentialité</a>
+    <a href="retractation.html" class="retract" aria-current="page">Renoncer au contrat ici</a>
+  </nav>
+  <p>© <span data-year>2026</span> Maison 1866</p>
+</footer>
+<script src="js/config.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/retractation.js"></script>
+</body>
+</html>
