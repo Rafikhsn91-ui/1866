@@ -19,7 +19,7 @@ html{font-size:16px;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antiali
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;
   min-height:100svh;display:flex;flex-direction:column;overflow-x:hidden}
 a{color:inherit}
-img{display:block;max-width:100%}
+img{display:block;max-width:100%;height:auto}
 button{background:none;border:none;color:inherit;font:inherit;cursor:pointer;-webkit-appearance:none;touch-action:manipulation}
 input,textarea,select{font:inherit;color:inherit;border-radius:0}
 :focus-visible{outline:2px solid var(--accent-deep);outline-offset:3px;border-radius:2px}
